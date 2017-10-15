@@ -1,12 +1,12 @@
-external vscode : Js.t {..} = "vscode" [@@bs.module];
+external vscodeLangServerTypes : Js.t {..} = "vscode-languageserver-types" [@@bs.module];
 
 /* TODO: add to glennsl/bs-vscode */
 module DiagnosticSeverity = {
   type t;
-  let error: t = vscode##_DiagnosticSeverity##_Error;
-  let warning: t = vscode##_DiagnosticSeverity##_Warning;
-  let information: t = vscode##_DiagnosticSeverity##_Information;
-  let hint: t = vscode##_DiagnosticSeverity##_Hint;
+  let error: t = vscodeLangServerTypes##_DiagnosticSeverity##_Error;
+  let warning: t = vscodeLangServerTypes##_DiagnosticSeverity##_Warning;
+  let information: t = vscodeLangServerTypes##_DiagnosticSeverity##_Information;
+  let hint: t = vscodeLangServerTypes##_DiagnosticSeverity##_Hint;
 };
 
 type source =
@@ -37,48 +37,62 @@ type diagnostic = {
   source: string
 };
 
-let createDiagnostic message startCharacter startLine endCharacter endLine severity => {
-  code: "",
-  message,
-  range: {
-    endPos: {character: endCharacter, line: endLine},
-    startPos: {character: startCharacter, line: startLine}
-  },
-  severity,
-  source: sourceToString Bucklescript
+let getSeverity input => {
+  let severityRe = [%re "/^Warning number \\d+/"];
+  switch (severityRe |> Js.Re.exec input) {
+  | Some _ => DiagnosticSeverity.warning
+  | None => DiagnosticSeverity.error
+  }
 };
 
+let createDiagnostic message startCharacter startLine endCharacter endLine severity => {
+  "code": "",
+  "message": message,
+  "range": {
+    "end": {character: endCharacter, line: endLine},
+    "start": {character: startCharacter, line: startLine}
+  },
+  "severity": severity,
+  "source": sourceToString Bucklescript
+};
+
+let unsafeGetMatch match =>
+  switch (Js.Nullable.to_opt match) {
+  | Some m => m
+  | None => raise (Failure "Match not found")
+  };
+
 let parseErrors bsbOutput => {
-  let parsedDiagnostics = {};
+  let parsedDiagnostics = Js.Dict.empty ();
   let level1 = [
     [%re "/File \"(.*)\", line (\\d*), characters (\\d*)-(\\d*):[\\s\\S]*?/"],
     [%re "/Error: ([\\s\\S]*)We've found a bug for you!/"]
   ];
-  let reLevel1Errors = Js.Re.fromString (String.concat "" (List.map Js.Re.source level1));
+  let reLevel1Errors =
+    Js.Re.fromStringWithFlags (String.concat "" (List.map Js.Re.source level1)) flags::"g";
   let break = ref false;
   while (not !break) {
     switch (reLevel1Errors |> Js.Re.exec bsbOutput) {
     | None => break := true
     | Some result =>
-      let fileUri = "file://" ^ (Js.Re.matches result).(1);
-      let startLine = int_of_string (Js.Re.matches result).(2) - 1;
+      let matches = Js.Re.matches result;
+      let fileUri = "file://" ^ unsafeGetMatch matches.(1);
+      let startLine = int_of_string (unsafeGetMatch matches.(2)) - 1;
       let endLine = startLine;
-      let startCharacter = int_of_string (Js.Re.matches result).(3);
-      let endCharacter = int_of_string (Js.Re.matches result).(4);
-      let message = String.trim (Js.Re.matches result).(5);
-      let severityRe = [%re "/^Warning number \\d+/"];
-      let severity =
-        switch (severityRe |> Js.Re.exec (Js.Re.matches result).(0)) {
-        | Some result => DiagnosticSeverity.warning
-        | None => DiagnosticSeverity.error
-        };
+      let startCharacter = int_of_string (unsafeGetMatch matches.(3));
+      let endCharacter = int_of_string (unsafeGetMatch matches.(4));
+      let message = String.trim (unsafeGetMatch matches.(5));
+      let severity = getSeverity (unsafeGetMatch matches.(0));
       let diagnostic =
         createDiagnostic message startCharacter startLine endCharacter endLine severity;
-      ()
+      let diagnostics =
+        switch (Js.Dict.get parsedDiagnostics fileUri) {
+        | Some d => Js.Array.concat [|diagnostic|] d
+        | None => [|diagnostic|]
+        };
+      Js.Dict.set parsedDiagnostics fileUri diagnostics
     }
   };
-  /* if (!parsedDiagnostics[fileUri]) { parsedDiagnostics[fileUri] = []; }
-     parsedDiagnostics[fileUri].push(diagnostic); */
   let level2 = [
     [%re
       "/(?:We've found a bug for you!|Warning number \\d+)\\n\\s*/"
@@ -87,46 +101,46 @@ let parseErrors bsbOutput => {
       "/(.*) (\\d+):(\\d+)(?:-(\\d+)(?::(\\d+))?)?\\n  \\n/"
     ], /* Capturing file name and lines / indexes */
     [%re "/(?:.|\\n)*?\\n  \\n/"], /* Ignoring actual lines content being printed */
-    [%re "/((?:.|\n)*?)/"], /* Capturing error / warning message */
+    [%re "/((?:.|\\n)*?)/"], /* Capturing error / warning message */
     [%re
       "/((?=We've found a bug for you!)|(?:\\[\\d+\\/\\d+\\] (?:\\x1b\\[[0-9;]*?m)?Building)|(?:ninja: build stopped: subcommand failed)|(?=Warning number \\d+)|$)/"
     ] /* Possible tails */
   ];
-  let reLevel2Errors = String.concat "" (List.map Js.Re.source level2);
-  let result = Js.Re.exec bsbOutput (Js.Re.fromString reLevel2Errors);
-  let errorMatch = ref false;
-  while (errorMatch = reLevel2Errors.exec bsbOutput) {
-    let fileUri = "file://" + errorMatch [1];
-    /* Suppose most complex case, path/to/file.re 10:20-15:5 message */
-    let startLine = Number (errorMatch [2]) - 1;
-    let startCharacter = Number (errorMatch [3]) - 1;
-    let endLine = Number (errorMatch [4]) - 1;
-    let endCharacter = Number (errorMatch [5]); /* Non inclusive originally */
-    let messageRe = [%re "/\\n  /g"];
-    let message = errorMatch [6].replace (messageRe, "\n");
-    if (isNaN endLine) {
-      /* Format path/to/file.re 10:20 message */
-      endCharacter = startCharacter;
-      endLine = startLine
-    } else if (
-      isNaN endCharacter
-    ) {
-      /* Format path/to/file.re 10:20-15 message */
-      endCharacter = endLine + 1; /* Format is L:SC-EC */
-      endLine = startLine
-    };
-    let severityRe = [%re "/^Warning number \\d+/"];
-    let result = Js.Re.exec errorMatch [0] severityRe;
-    let severity =
-      switch result {
-      | Some result => Some result
-      | None => None /* types.DiagnosticSeverity.Error */
-      };
-    let diagnostic =
-      createDiagnostic (message, startCharacter, startLine, endCharacter, endLine, severity);
-    ()
-  }
-  /* if (!parsedDiagnostics[fileUri]) { parsedDiagnostics[fileUri] = []; }
-     parsedDiagnostics[fileUri].push(diagnostic); */
-  /* return parsedDiagnostics; */
+  let reLevel2Errors =
+    Js.Re.fromStringWithFlags (String.concat "" (List.map Js.Re.source level2)) flags::"g";
+  let break = ref false;
+  while (not !break) {
+    switch (reLevel2Errors |> Js.Re.exec bsbOutput) {
+    | None => break := true
+    | Some result =>
+      let matches = Js.Re.matches result;
+      let fileUri = "file://" ^ unsafeGetMatch matches.(1);
+      let startLine = int_of_string (unsafeGetMatch matches.(2)) - 1;
+      let startCharacter = int_of_string (unsafeGetMatch matches.(3)) - 1;
+      let (endLine, endCharacter) =
+        switch (Js.Nullable.to_opt matches.(4), Js.Nullable.to_opt matches.(5)) {
+        /* Format is SL-SC:EL-EC */
+        | (Some fourth, Some fifth) => (int_of_string fourth - 1, int_of_string fifth)
+        /* Format is L:SC-EC */
+        | (Some fourth, None) => (startLine, int_of_string fourth)
+        /* Format is L:C */
+        | (None, None) => (startLine, startCharacter)
+        /* Impossible */
+        | (None, Some _) => raise (Failure "Impossible state")
+        };
+      let messageRe = [%re "/\\n  /g"];
+      let message = Js.String.replaceByRe messageRe "\\n" (unsafeGetMatch matches.(6));
+      let severity = getSeverity (unsafeGetMatch matches.(0));
+      let diagnostic =
+        createDiagnostic message startCharacter startLine endCharacter endLine severity;
+      let diagnostics =
+        switch (Js.Dict.get parsedDiagnostics fileUri) {
+        | Some d => Js.Array.concat [|diagnostic|] d
+        | None => [|diagnostic|]
+        };
+      Js.Dict.set parsedDiagnostics fileUri diagnostics
+    }
+  };
+  Js.log parsedDiagnostics;
+  parsedDiagnostics
 };

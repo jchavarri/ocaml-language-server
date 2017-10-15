@@ -38,7 +38,6 @@
     "@types/lokijs": "1.2.30",
     "@types/node": "8.0.31",
     "@types/pegjs": "0.10.0",
-    "bs-platform": "^1.9.3",
     "tslint": "5.7.0",
     "typescript": "2.5.3"
   },
@@ -53,5 +52,8 @@
     "vscode-languageserver": "3.4.3",
     "vscode-languageserver-types": "3.4.0",
     "vscode-uri": "1.0.1"
+  },
+  "peerDependencies": {
+    "bs-platform": "^1.9.3"
   }
 }
