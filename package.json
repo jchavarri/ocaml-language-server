@@ -21,8 +21,7 @@
   },
   "scripts": {
     "compile": "npm run ocamldoc:grammar:compile && tsc -watch -p ./",
-    "ocamldoc:grammar:compile": "shx mkdir -p out/src/shared/parser/ocamldoc && pegjs -o out/src/shared/parser/ocamldoc/grammar.js src/shared/parser/ocamldoc/grammar.pegjs",
-    "lint": "tslint --project tsconfig.json --type-check",
+    "ocamldoc:grammar:compile": "mkdir -p out/src/shared/parser/ocamldoc && pegjs -o out/src/shared/parser/ocamldoc/grammar.js src/shared/parser/ocamldoc/grammar.pegjs",
     "prepublish": "npm run ocamldoc:grammar:compile && tsc -p ./"
   },
   "main": "./out/src/server/index",
@@ -33,13 +32,13 @@
     "out"
   ],
   "devDependencies": {
-    "@types/async": "2.0.44",
-    "@types/glob": "5.0.33",
-    "@types/lodash": "4.14.77",
+    "@types/async": "2.0.43",
+    "@types/glob": "5.0.32",
+    "@types/lodash": "4.14.76",
     "@types/lokijs": "1.2.30",
-    "@types/node": "8.0.34",
+    "@types/node": "8.0.31",
     "@types/pegjs": "0.10.0",
-    "shx": "0.2.2",
+    "bs-platform": "^1.9.3",
     "tslint": "5.7.0",
     "typescript": "2.5.3"
   },
@@ -47,7 +46,7 @@
     "async": "2.5.0",
     "glob": "7.1.2",
     "lodash": "4.17.4",
-    "lokijs": "1.5.1",
+    "lokijs": "1.5.0",
     "pegjs": "0.10.0",
     "vscode-jsonrpc": "3.4.1",
     "vscode-languageclient": "3.4.5",
