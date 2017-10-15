@@ -10,12 +10,12 @@ module DiagnosticSeverity = {
 };
 
 type source =
-  | Bucklescript
+  | BuckleScript
   | Merlin;
 
 let sourceToString source =>
   switch source {
-  | Bucklescript => "bucklescript"
+  | BuckleScript => "bucklescript"
   | Merlin => "merlin"
   };
 
@@ -53,7 +53,7 @@ let createDiagnostic message startCharacter startLine endCharacter endLine sever
     "start": {character: startCharacter, line: startLine}
   },
   "severity": severity,
-  "source": sourceToString Bucklescript
+  "source": sourceToString BuckleScript
 };
 
 let unsafeGetMatch match =>
@@ -124,7 +124,7 @@ let parseErrors bsbOutput => {
         /* Format is L:SC-EC */
         | (Some fourth, None) => (startLine, int_of_string fourth)
         /* Format is L:C */
-        | (None, None) => (startLine, startCharacter)
+        | (None, None) => (startLine, startCharacter + 1)
         /* Impossible */
         | (None, Some _) => raise (Failure "Impossible state")
         };
@@ -141,6 +141,5 @@ let parseErrors bsbOutput => {
       Js.Dict.set parsedDiagnostics fileUri diagnostics
     }
   };
-  Js.log parsedDiagnostics;
   parsedDiagnostics
 };
