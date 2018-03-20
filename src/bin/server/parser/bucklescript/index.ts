@@ -9,7 +9,7 @@ export function parseErrors(bsbOutput: string): { [key: string]: LSP.Diagnostic[
   const reLevel1Errors = new RegExp(
     [
       /File "(.*)", line (\d*), characters (\d*)-(\d*):[\s\S]*?/,
-      /(?:Error|Warning \d+): ([\s\S]*)(We've found a bug for you!|File "(.*)", line (\d*):\nError: Error while running external preprocessor|File "(.*)", line (\d*):\nError: Some fatal warnings were triggered)/,
+      /(?:Error|Warning \d+): (?:[\s\S]*?)(?:([\s\S]*?)(?:We've found a bug for you!|File ")|(.*?)\n\S)/,
     ]
       .map(r => r.source)
       .join(""),
@@ -23,7 +23,7 @@ export function parseErrors(bsbOutput: string): { [key: string]: LSP.Diagnostic[
     const endLine = Number(errorMatch[2]) - 1;
     const startCharacter = Number(errorMatch[3]);
     const endCharacter = Number(errorMatch[4]);
-    const message = errorMatch[5].trim();
+    const message = (errorMatch[5] || errorMatch[6]).trim();
     const severity = /^Warning number \d+/.exec(errorMatch[0])
       ? LSP.DiagnosticSeverity.Warning
       : LSP.DiagnosticSeverity.Error;

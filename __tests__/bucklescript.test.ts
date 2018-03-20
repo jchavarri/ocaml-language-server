@@ -31,3 +31,7 @@ it('parses messages including "Unused bucklescript attribute"', () => {
 it("parses messages including interface/implementation mismatch", () => {
   expect(getDiagnostics("6.txt")).toMatchSnapshot();
 });
+
+it("parses messages including FFI errors with [@bs.send]", () => {
+  expect(getDiagnostics("7.txt")).toMatchSnapshot();
+});

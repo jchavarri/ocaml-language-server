@@ -97,6 +97,29 @@ Object {
 }
 `;
 
+exports[`parses messages including FFI errors with [@bs.send] 1`] = `
+Object {
+  "file:///Users/bla/Development/sandbox/my-first-app/src/Demo.re": Array [
+    Object {
+      "code": "",
+      "message": "You used an FFI attribute that can't be used with [@bs.send]",
+      "range": Object {
+        "end": Object {
+          "character": 52,
+          "line": 62,
+        },
+        "start": Object {
+          "character": 0,
+          "line": 62,
+        },
+      },
+      "severity": 1,
+      "source": "bucklescript",
+    },
+  ],
+}
+`;
+
 exports[`parses messages including interface/implementation mismatch 1`] = `
 Object {
   "file:///Users/bla/Development/github/bs-bn.js/src/Bn.re": Array [
