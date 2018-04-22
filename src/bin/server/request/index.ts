@@ -1,6 +1,7 @@
 import giveAvailableLibraries from "./giveAvailableLibraries";
+import giveBindings from "./giveBindings";
 import giveCaseAnalysis from "./giveCaseAnalysis";
 import giveMerlinFiles from "./giveMerlinFiles";
 import giveProjectEnv from "./giveProjectEnv";
 
-export { giveCaseAnalysis, giveMerlinFiles, giveAvailableLibraries, giveProjectEnv };
+export { giveAvailableLibraries, giveBindings, giveCaseAnalysis, giveMerlinFiles, giveProjectEnv };

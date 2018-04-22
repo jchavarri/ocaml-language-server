@@ -2,7 +2,9 @@ import { RequestType } from "vscode-jsonrpc";
 import { TextDocumentIdentifier } from "vscode-languageserver-protocol";
 import * as merlin from "../merlin";
 import * as ordinal from "../merlin/ordinal";
-import { ITextDocumentRange } from "../types";
+import { IGetBindingsParams, ITextDocumentRange } from "../types";
+
+export const giveBindings = new RequestType<IGetBindingsParams, string, void, void>("reason.server.giveBindings");
 
 export const giveCaseAnalysis = new RequestType<ITextDocumentRange, null | merlin.Case.Destruct, void, void>(
   "reason.server.giveCaseAnalysis",

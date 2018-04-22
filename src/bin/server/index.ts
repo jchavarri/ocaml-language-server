@@ -31,6 +31,7 @@ session.connection.onRenameRequest(feature.rename(session));
 session.connection.onWorkspaceSymbol(feature.workspaceSymbol(session));
 
 // vscode-reasonml features
+session.connection.onRequest(remote.server.giveBindings, request.giveBindings(session));
 session.connection.onRequest(remote.server.giveCaseAnalysis, request.giveCaseAnalysis(session));
 session.connection.onRequest(remote.server.giveMerlinFiles, request.giveMerlinFiles(session));
 session.connection.onRequest(remote.server.giveAvailableLibraries, request.giveAvailableLibraries(session));

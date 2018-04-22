@@ -24,6 +24,7 @@ export interface ISettings {
       ocamlmerlin: string;
       opam: string;
       rebuild: string;
+      rebind: string;
       refmt: string;
       refmterr: string;
       rtop: string;
@@ -60,6 +61,7 @@ export namespace ISettings {
         ocamlfind: "ocamlfind",
         ocamlmerlin: "ocamlmerlin",
         opam: "opam",
+        rebind: "rebind",
         rebuild: "rebuild",
         refmt: "refmt",
         refmterr: "refmterr",

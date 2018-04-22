@@ -1,6 +1,7 @@
 import * as getFormatted from "./getFormatted";
 
 import getAvailableLibraries from "./getAvailableLibraries";
+import getBindings from "./getBindings";
 import getDocumentation from "./getDocumentation";
 import getMerlinFiles from "./getMerlinFiles";
 import getModules from "./getModules";
@@ -15,6 +16,7 @@ import restartMerlin from "./restartMerlin";
 
 export {
   getAvailableLibraries,
+  getBindings,
   getDocumentation,
   getFormatted,
   getMerlinFiles,
