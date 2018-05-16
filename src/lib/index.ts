@@ -61,7 +61,7 @@ export namespace ISettings {
         ocamlmerlin: "ocamlmerlin",
         opam: "opam",
         rebuild: "rebuild",
-        refmt: "./node_modules/bs-platform/lib/bsrefmt",
+        refmt: "refmt",
         refmterr: "refmterr",
         rtop: "rtop",
       },
